@@ -18,36 +18,72 @@ const App: React.FC = () => {
     time: 0,
   });
 
-  // Refs to store the AI interval IDs
-  const aiIntervalsRef = useRef<number[]>([]);
-  const checkRaceStatusRef = useRef<number | null>(null);
+  // Ref for race start time
+  const raceStartTimeRef = useRef<number | null>(null);
+
+  // AI typing speeds (characters per second)
+  const aiSpeeds = useRef([
+    6 + Math.random() * 2, // ~70-90 WPM
+    5 + Math.random() * 2, // ~60-80 WPM
+    4 + Math.random() * 2, // ~50-70 WPM
+  ]);
 
   // Select a random text when the component mounts
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * sampleTexts.length);
     setText(sampleTexts[randomIndex]);
-
-    // Cleanup intervals on unmount
-    return () => {
-      cleanupIntervals();
-    };
   }, []);
 
-  // Helper to clean up intervals
-  const cleanupIntervals = () => {
-    aiIntervalsRef.current.forEach((id) => window.clearInterval(id));
-    aiIntervalsRef.current = [];
+  // Handle AI movement
+  useEffect(() => {
+    let intervalId: number;
 
-    if (checkRaceStatusRef.current) {
-      window.clearInterval(checkRaceStatusRef.current);
-      checkRaceStatusRef.current = null;
+    if (isRacing && !hasRaceEnded) {
+      // Set initial race time if not set
+      if (!raceStartTimeRef.current) {
+        raceStartTimeRef.current = Date.now();
+      }
+
+      intervalId = window.setInterval(() => {
+        const elapsedSeconds = (Date.now() - raceStartTimeRef.current!) / 1000;
+
+        setAiProgress((prevProgress) => {
+          const newProgress = aiSpeeds.current.map((speed, index) => {
+            // Calculate characters typed based on speed and time
+            const charsTyped = speed * elapsedSeconds;
+            const progress = Math.min(100, Math.round((charsTyped / text.length) * 100));
+
+            // Add small random variation (-0.5 to +0.5)
+            const variation = Math.random() - 0.5;
+
+            // Ensure progress never decreases and stays within bounds
+            return Math.min(100, Math.max(prevProgress[index], progress + variation));
+          });
+
+          // Check if any AI has finished
+          if (newProgress.some((p) => p >= 100)) {
+            setHasRaceEnded(true);
+          }
+
+          return newProgress;
+        });
+      }, 100);
     }
-  };
+
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [isRacing, hasRaceEnded, text.length]);
+
+  // Update positions whenever progress changes
+  useEffect(() => {
+    updateUserPosition(userProgress, aiProgress);
+  }, [userProgress, aiProgress]);
 
   // Reset the game state
   const resetGame = () => {
-    cleanupIntervals();
-
     const randomIndex = Math.floor(Math.random() * sampleTexts.length);
     setText(sampleTexts[randomIndex]);
     setIsRacing(false);
@@ -61,13 +97,21 @@ const App: React.FC = () => {
       errors: 0,
       time: 0,
     });
+    raceStartTimeRef.current = null;
+
+    // Generate new random speeds for AI racers
+    aiSpeeds.current = [
+      6 + Math.random() * 2, // ~70-90 WPM
+      5 + Math.random() * 2, // ~60-80 WPM
+      4 + Math.random() * 2, // ~50-70 WPM
+    ];
   };
 
-  // Start the race with AI racers
+  // Start the race
   const startRace = () => {
     setIsRacing(true);
     setHasRaceEnded(false);
-    simulateAiRacers();
+    raceStartTimeRef.current = Date.now();
   };
 
   // End the race
@@ -75,56 +119,21 @@ const App: React.FC = () => {
     setIsRacing(false);
     setHasRaceEnded(true);
     setTypingStats(stats);
-    cleanupIntervals();
   };
 
   // Update user progress
   const updateProgress = (progress: number) => {
     setUserProgress(progress);
-    updateUserPosition(progress);
 
     // End race if user reaches 100%
     if (progress >= 100) {
       setUserProgress(100);
+      setHasRaceEnded(true);
     }
   };
 
-  // Simulate AI racers with different speeds
-  const simulateAiRacers = () => {
-    // Clear previous intervals if they exist
-    cleanupIntervals();
-
-    // Create new intervals
-    const intervals = [
-      window.setInterval(() => updateAiProgress(0, 0.6 + Math.random() * 0.4), 100),
-      window.setInterval(() => updateAiProgress(1, 0.4 + Math.random() * 0.4), 100),
-      window.setInterval(() => updateAiProgress(2, 0.2 + Math.random() * 0.4), 100),
-    ];
-
-    aiIntervalsRef.current = intervals;
-
-    // Check race status
-    checkRaceStatusRef.current = window.setInterval(() => {
-      if (!isRacing || hasRaceEnded) {
-        cleanupIntervals();
-      }
-    }, 500);
-  };
-
-  // Update AI racer progress
-  const updateAiProgress = (index: number, increment: number) => {
-    setAiProgress((prevProgress) => {
-      const newProgress = [...prevProgress];
-      if (newProgress[index] < 100) {
-        newProgress[index] = Math.min(100, newProgress[index] + increment);
-        updateUserPosition(userProgress, newProgress);
-      }
-      return newProgress;
-    });
-  };
-
   // Update user position in the race
-  const updateUserPosition = (userProgress: number, currentAiProgress = aiProgress) => {
+  const updateUserPosition = (userProgress: number, currentAiProgress: number[]) => {
     const allProgress = [userProgress, ...currentAiProgress];
     const sortedProgress = [...allProgress].sort((a, b) => b - a);
     const position = sortedProgress.indexOf(userProgress);
