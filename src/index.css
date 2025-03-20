@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", SFMono-Regular, ui-monospace, "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  --radius: 0.375rem;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  @apply bg-slate-900 text-slate-50;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded bg-slate-600;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-500;
+}
+
+@layer components {
+  .typing-container {
+    @apply rounded border border-slate-700/40 bg-slate-800/50 p-4 shadow-lg backdrop-blur-lg;
+  }
+
+  .track-container {
+    @apply overflow-hidden rounded border border-slate-700/40 bg-slate-800/50 shadow-lg backdrop-blur-lg;
+  }
+
+  .stats-container {
+    @apply rounded border border-slate-700/40 bg-slate-800/50 p-6 shadow-lg backdrop-blur-lg;
+  }
+
+  .race-track {
+    @apply h-8 bg-slate-800/40 rounded relative overflow-hidden;
+    background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 20px
+    );
+    background-size: 20px 100%;
+    animation: trackAnimation 10s linear infinite;
+  }
+
+  @keyframes trackAnimation {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: -100px 0;
+    }
+  }
+
+  .char {
+    @apply transition-colors duration-100 tracking-wider;
+  }
+
+  .char-current {
+    @apply border-b-2 border-blue-400 text-slate-200;
+  }
+
+  .char-correct {
+    @apply text-emerald-400;
+  }
+
+  .char-incorrect {
+    @apply bg-rose-700/30 text-rose-500;
+  }
+
+  .char-ahead {
+    @apply text-slate-500;
+  }
+
+  .input-field {
+    @apply w-full rounded border-2 border-slate-600 bg-slate-800/80 p-3 text-slate-100 transition-all duration-200 focus:border-blue-600 focus:outline-none;
+  }
+
+  .btn {
+    @apply rounded px-5 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+  }
+
+  .btn-success {
+    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500;
+  }
+
+  .btn-danger {
+    @apply bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500;
+  }
+
+  .notification {
+    @apply rounded border border-opacity-20 p-2 text-center text-sm shadow;
+  }
+
+  .notification-warning {
+    @apply border-amber-500/20 bg-amber-500/10 text-amber-200;
+  }
+
+  .notification-success {
+    @apply border-emerald-500/20 bg-emerald-600/10 text-emerald-200;
+  }
+}
